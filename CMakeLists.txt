@@ -724,8 +724,11 @@ endif()
 
 if(NOT ${MGE_WITH_CUDA}
    AND NOT ${MGE_WITH_ROCM}
-   AND NOT ${MGE_WITH_CAMBRICON})
-  message(STATUS "Disable distributed support, as both CUDA and ROCm are disabled.")
+   AND NOT ${MGE_WITH_CAMBRICON}
+   AND NOT ${MGE_WITH_ATLAS})
+  message(
+    STATUS
+      "Disable distributed support, as CUDA, ROCm, CAMBRICON and ATLAS are disabled.")
   set(MGE_WITH_DISTRIBUTED OFF)
 endif()
 
@@ -1081,11 +1084,16 @@ if(MGE_WITH_ROCM)
   include(cmake/rocm.cmake)
 endif()
 
+# TODO: add ascend.cmake
 if(MGE_WITH_ATLAS)
+  include_directories("$ENV{ASCEND_HOME_PATH}/include")
+  link_directories("$ENV{ASCEND_HOME_PATH}/lib64")
   add_subdirectory(dnn/atlas-stub)
   list(APPEND MGE_ATLAS_LIBS atlas-stub)
+  list(APPEND MGE_ATLAS_LIBS ascendcl nnopbase opapi acl_op_compiler)
   set(MGE_ATLAS_LIBS "${MGE_ATLAS_LIBS}")
   set(MGB_ATLAS ${MGE_WITH_ATLAS})
+  set(MGB_USE_ATLAS_ASYNC_API ${MGE_WITH_ATLAS})
 endif()
 
 find_program(CCACHE_BIN ccache)
@@ -1469,6 +1477,9 @@ if(MGE_WITH_DISTRIBUTED)
       CACHE BOOL "Override MegRay option" FORCE)
   set(MEGRAY_WITH_CNCL
       ${MGE_WITH_CAMBRICON}
+      CACHE BOOL "Override MegRay option" FORCE)
+  set(MEGRAY_WITH_HCCL
+      ${MGE_WITH_ATLAS}
       CACHE BOOL "Override MegRay option" FORCE)
   set(MEGRAY_CUDA_GENCODE
       ${MGE_CUDA_GENCODE}

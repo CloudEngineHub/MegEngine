@@ -28,6 +28,9 @@ AtlasComputingContext::~AtlasComputingContext() {
 
 void AtlasComputingContext::memcpy(
         void* dst, const void* src, size_t size_in_bytes, megcoreMemcpyKind_t kind) {
+    if (size_in_bytes == 0) {
+        return;
+    }
     switch (kind) {
         case megcoreMemcpyDeviceToHost:
             acl_check(aclrtMemcpy(
@@ -39,9 +42,9 @@ void AtlasComputingContext::memcpy(
             break;
         case megcoreMemcpyDeviceToDevice:
             // async d2d is always faster than sync d2d because of SDMA
-            acl_check(aclrtMemcpyAsync(
+            acl_safe_memcpy_async(
                     dst, size_in_bytes, src, size_in_bytes, ACL_MEMCPY_DEVICE_TO_DEVICE,
-                    m_ctx.stream));
+                    m_ctx.stream);
             break;
         default:
             megdnn_throw("bad atlas memcpy kind");

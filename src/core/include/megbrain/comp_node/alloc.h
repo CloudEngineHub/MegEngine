@@ -212,6 +212,14 @@ public:
     static std::unique_ptr<DevMemAlloc> make_cambricon_alloc();
 #endif
 
+#if MGB_ATLAS
+    /*!
+     * \brief create a new allocator for a device that merely forward aclrtMalloc and
+     * aclrtFree.
+     */
+    static std::unique_ptr<DevMemAlloc> make_atlas_alloc();
+#endif
+
     virtual ~DevMemAlloc() = default;
 
     /*!
@@ -248,6 +256,11 @@ public:
         return *this;
     }
 
+    DevMemAlloc& addr_alignment(size_t addr_alignment) {
+        m_addr_alignment = addr_alignment;
+        return *this;
+    }
+
     /*!
      * \brief set prealloc config
      */
@@ -262,6 +275,8 @@ public:
      */
     size_t alignment() const { return m_alignment; }
 
+    size_t addr_alignment() const { return m_addr_alignment; }
+
     const PreAllocConfig& prealloc_config() { return m_prealloc_config; }
 
     virtual size_t get_used_memory() { return 0; }
@@ -270,6 +285,7 @@ public:
 
 private:
     size_t m_alignment = 1;
+    size_t m_addr_alignment = 1;
     PreAllocConfig m_prealloc_config;
 };
 
@@ -358,6 +374,7 @@ public:
 class SimpleCachingAlloc : virtual public MemAllocBase {
 protected:
     size_t m_alignment = 1;
+    size_t m_addr_alignment = 1;
 
 public:
     virtual ~SimpleCachingAlloc() = default;
@@ -373,6 +390,13 @@ public:
     };
 
     size_t alignment() const { return m_alignment; };
+
+    SimpleCachingAlloc& addr_alignment(size_t addr_alignment) {
+        m_addr_alignment = addr_alignment;
+        return *this;
+    };
+
+    size_t addr_alignment() const { return m_addr_alignment; };
 };
 
 }  // namespace mem_alloc
